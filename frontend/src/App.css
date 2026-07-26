@@ -48,7 +48,8 @@ h1 {
     color: #5b6475;
 }
 
-.search-card {
+.search-card,
+.results-card {
     max-width: 1000px;
     margin: 0 auto;
     padding: 32px;
@@ -122,10 +123,25 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(23, 32, 51, 0.08);
 }
 
+input[aria-invalid="true"] {
+    border-color: #b42318;
+}
+
+input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.1);
+}
+
 input:disabled {
     background: #f0f2f6;
     color: #9aa2b1;
     cursor: not-allowed;
+}
+
+.error-message {
+    margin: 0;
+    color: #b42318;
+    font-size: 0.82rem;
+    line-height: 1.4;
 }
 
 .checkbox-group {
@@ -169,16 +185,68 @@ button:active {
     transform: translateY(0);
 }
 
+.results-card {
+    margin-top: 28px;
+}
+
+.results-eyebrow {
+    margin: 0 0 8px;
+    color: #5b6475;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.results-card h2 {
+    margin: 0 0 24px;
+    font-size: 1.8rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.summary-grid div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px;
+    background: #f5f7fb;
+    border-radius: 10px;
+}
+
+.summary-grid span {
+    color: #5b6475;
+    font-size: 0.8rem;
+}
+
+.summary-grid strong {
+    font-size: 0.95rem;
+}
+
+.results-note {
+    margin: 24px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid #e7eaf0;
+    color: #5b6475;
+    line-height: 1.5;
+}
+
 @media (max-width: 700px) {
     .app {
         padding: 48px 16px;
     }
 
-    .search-card {
+    .search-card,
+    .results-card {
         padding: 24px;
     }
 
-    .form-fields {
+    .form-fields,
+    .summary-grid {
         grid-template-columns: 1fr;
     }
 
@@ -190,6 +258,19 @@ button:active {
         width: 100%;
         min-width: 0;
     }
+}
+
+button:disabled {
+    background: #d7dce5;
+    color: #8b93a3;
+    cursor: not-allowed;
+    opacity: 1;
+    transform: none;
+}
+
+button:disabled:hover {
+    opacity: 1;
+    transform: none;
 }
 
 @media (max-width: 430px) {
