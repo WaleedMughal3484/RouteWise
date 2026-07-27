@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "./App.css";
 
 const mockFlights = [
@@ -8,6 +8,7 @@ const mockFlights = [
     code: "QR",
     price: 1428,
     duration: "23h 40m",
+    durationMinutes: 1420,
     stops: 2,
     rating: 4.8,
     departureTime: "10:15 AM",
@@ -20,6 +21,7 @@ const mockFlights = [
     code: "TK",
     price: 1367,
     duration: "25h 15m",
+    durationMinutes: 1515,
     stops: 2,
     rating: 4.7,
     departureTime: "6:30 PM",
@@ -32,6 +34,7 @@ const mockFlights = [
     code: "AC",
     price: 1612,
     duration: "24h 55m",
+    durationMinutes: 1495,
     stops: 2,
     rating: 4.6,
     departureTime: "8:20 AM",
@@ -44,6 +47,7 @@ const mockFlights = [
     code: "EK",
     price: 1549,
     duration: "26h 10m",
+    durationMinutes: 1570,
     stops: 2,
     rating: 4.8,
     departureTime: "2:40 PM",
@@ -60,6 +64,7 @@ function App() {
   const [destination, setDestination] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState(null);
+  const [sortBy, setSortBy] = useState("cheapest");
 
   const sameCity =
     origin.trim() !== "" &&
@@ -133,6 +138,7 @@ function App() {
     setIsLoading(true);
     setSearchSummary(null);
     setSelectedFlight(null);
+    setSortBy("cheapest");
 
     setTimeout(() => {
       setSearchSummary({
@@ -158,6 +164,15 @@ function App() {
       .join(" ");
   }
 
+  function formatCity(value) {
+    return value
+      .trim()
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
   function formatDate(date) {
     if (!date) {
       return "Not selected";
@@ -178,7 +193,7 @@ function App() {
     }).format(price);
   }
 
-  function getVisibleFlights() {
+  const visibleFlights = useMemo(() => {
     if (!searchSummary) {
       return [];
     }
@@ -198,8 +213,50 @@ function App() {
       flights = flights.filter((flight) => flight.stops === 0);
     }
 
+    if (sortBy === "cheapest") {
+      flights.sort((a, b) => a.price - b.price);
+    }
+
+    if (sortBy === "fastest") {
+      flights.sort((a, b) => a.durationMinutes - b.durationMinutes);
+    }
+
+    if (sortBy === "highest-rated") {
+      flights.sort((a, b) => b.rating - a.rating);
+    }
+
+    if (sortBy === "fewest-stops") {
+      flights.sort((a, b) => a.stops - b.stops || a.price - b.price);
+    }
+
     return flights;
-  }
+  }, [searchSummary, sortBy]);
+
+  const flightInsights = useMemo(() => {
+    if (visibleFlights.length === 0) {
+      return null;
+    }
+
+    const cheapest = visibleFlights.reduce((bestFlight, currentFlight) =>
+      currentFlight.price < bestFlight.price ? currentFlight : bestFlight
+    );
+
+    const fastest = visibleFlights.reduce((bestFlight, currentFlight) =>
+      currentFlight.durationMinutes < bestFlight.durationMinutes
+        ? currentFlight
+        : bestFlight
+    );
+
+    const highestRated = visibleFlights.reduce((bestFlight, currentFlight) =>
+      currentFlight.rating > bestFlight.rating ? currentFlight : bestFlight
+    );
+
+    return {
+      cheapest,
+      fastest,
+      highestRated,
+    };
+  }, [visibleFlights]);
 
   function buildRoute(flight) {
     if (!searchSummary) {
@@ -207,13 +264,11 @@ function App() {
     }
 
     return [
-      searchSummary.origin,
+      formatCity(searchSummary.origin),
       ...flight.connectionCities,
-      searchSummary.destination,
+      formatCity(searchSummary.destination),
     ].join(" → ");
   }
-
-  const visibleFlights = getVisibleFlights();
 
   return (
     <main className="app">
@@ -401,7 +456,8 @@ function App() {
           <div className="spinner" />
           <h2>Searching for flights</h2>
           <p>
-            Comparing routes from {origin.trim()} to {destination.trim()}...
+            Comparing routes from {formatCity(origin)} to{" "}
+            {formatCity(destination)}...
           </p>
         </section>
       )}
@@ -413,7 +469,8 @@ function App() {
               <p className="results-eyebrow">Available flights</p>
 
               <h2>
-                {searchSummary.origin} to {searchSummary.destination}
+                {formatCity(searchSummary.origin)} to{" "}
+                {formatCity(searchSummary.destination)}
               </h2>
 
               <p className="results-subtitle">
@@ -429,6 +486,58 @@ function App() {
               {visibleFlights.length !== 1 ? "s" : ""}
             </div>
           </div>
+
+          {flightInsights && (
+            <div className="insights-grid">
+              <article className="insight-card">
+                <span>Cheapest flight</span>
+                <strong>{formatPrice(flightInsights.cheapest.price)}</strong>
+                <p>{flightInsights.cheapest.airline}</p>
+              </article>
+
+              <article className="insight-card">
+                <span>Fastest flight</span>
+                <strong>{flightInsights.fastest.duration}</strong>
+                <p>{flightInsights.fastest.airline}</p>
+              </article>
+
+              <article className="insight-card">
+                <span>Best rated</span>
+                <strong>★ {flightInsights.highestRated.rating}</strong>
+                <p>{flightInsights.highestRated.airline}</p>
+              </article>
+
+              <article className="insight-card">
+                <span>Flights found</span>
+                <strong>{visibleFlights.length}</strong>
+                <p>Matching your search</p>
+              </article>
+            </div>
+          )}
+
+          {visibleFlights.length > 0 && (
+            <div className="results-toolbar">
+              <div>
+                <h3>Compare flights</h3>
+                <p>Sort the available options based on your priorities.</p>
+              </div>
+
+              <div className="sort-group">
+                <label htmlFor="sortBy">Sort by</label>
+
+                <select
+                  id="sortBy"
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value)}
+                >
+                  <option value="cheapest">Cheapest</option>
+                  <option value="fastest">Fastest</option>
+                  <option value="highest-rated">Highest rated</option>
+                  <option value="fewest-stops">Fewest stops</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {visibleFlights.length > 0 ? (
             <div className="flight-list">
