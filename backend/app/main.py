@@ -24,17 +24,20 @@ def health_check() -> dict[str, str]:
 
 @app.get("/api/flights")
 def get_flights(
-    origin: str = Query(..., min_length=3, max_length=3),
-    destination: str = Query(..., min_length=3, max_length=3),
+    origin: str = Query(..., min_length=2, max_length=50),
+    destination: str = Query(..., min_length=2, max_length=50),
 ) -> dict:
+    formatted_origin = origin.strip().title()
+    formatted_destination = destination.strip().title()
+
     flights = [
         {
             "id": 1,
             "airline": "Air Canada",
             "airlineCode": "AC",
             "flightNumber": "AC101",
-            "origin": origin.upper(),
-            "destination": destination.upper(),
+            "origin": formatted_origin,
+            "destination": formatted_destination,
             "departureTime": "08:30",
             "arrivalTime": "11:45",
             "durationMinutes": 195,
@@ -47,8 +50,8 @@ def get_flights(
             "airline": "WestJet",
             "airlineCode": "WS",
             "flightNumber": "WS220",
-            "origin": origin.upper(),
-            "destination": destination.upper(),
+            "origin": formatted_origin,
+            "destination": formatted_destination,
             "departureTime": "12:15",
             "arrivalTime": "16:10",
             "durationMinutes": 235,
@@ -61,8 +64,8 @@ def get_flights(
             "airline": "Porter Airlines",
             "airlineCode": "PD",
             "flightNumber": "PD450",
-            "origin": origin.upper(),
-            "destination": destination.upper(),
+            "origin": formatted_origin,
+            "destination": formatted_destination,
             "departureTime": "17:40",
             "arrivalTime": "21:05",
             "durationMinutes": 205,
@@ -73,8 +76,8 @@ def get_flights(
     ]
 
     return {
-        "origin": origin.upper(),
-        "destination": destination.upper(),
+        "origin": formatted_origin,
+        "destination": formatted_destination,
         "count": len(flights),
         "flights": flights,
     }
