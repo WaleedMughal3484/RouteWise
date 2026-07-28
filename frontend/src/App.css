@@ -656,3 +656,66 @@ button:disabled:hover {
         font-size: 2.4rem;
     }
 }
+
+.form-fields {
+    position: relative;
+}
+
+.swap-control {
+    position: absolute;
+    top: 38px;
+    left: 50%;
+    z-index: 2;
+    display: flex;
+    transform: translateX(-50%);
+}
+
+.swap-button {
+    align-self: auto;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid #d8dee8;
+    border-radius: 50%;
+    background: white;
+    color: #1f2937;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(23, 32, 51, 0.1);
+}
+
+.swap-button:hover {
+    opacity: 1;
+    background-color: #f3f6fb;
+    transform: rotate(180deg);
+}
+
+.swap-button:active {
+    transform: rotate(180deg) scale(0.95);
+}
+
+.swap-button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.25);
+    outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+    .swap-control {
+        position: static;
+        justify-content: center;
+        transform: none;
+    }
+
+    .swap-button {
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+        transform: rotate(90deg);
+    }
+
+    .swap-button:hover {
+        transform: rotate(270deg);
+    }
+}

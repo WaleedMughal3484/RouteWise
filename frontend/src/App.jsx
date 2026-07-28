@@ -32,6 +32,13 @@ function App() {
     }
   }
 
+  function handleSwapCities() {
+    setOrigin(destination);
+    setDestination(origin);
+    setErrors({});
+    setApiError("");
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -321,6 +328,18 @@ function App() {
                   {errors.origin}
                 </p>
               )}
+            </div>
+
+            <div className="swap-control">
+              <button
+                type="button"
+                className="swap-button"
+                onClick={handleSwapCities}
+                aria-label="Swap departure and destination cities"
+                title="Swap cities"
+              >
+                ⇄
+              </button>
             </div>
 
             <div className="form-group">
@@ -654,9 +673,9 @@ function App() {
           )}
 
           <p className="results-note">
-            These results currently come from the RouteWise mock backend.
-            Live pricing and availability will appear after the external
-            flight API is connected.
+            These results currently come from the RouteWise mock backend. Live
+            pricing and availability will appear after the external flight API
+            is connected.
           </p>
         </section>
       )}
