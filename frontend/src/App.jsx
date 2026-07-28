@@ -1,60 +1,6 @@
 import { useMemo, useState } from "react";
+import { searchFlights } from "./services/api";
 import "./App.css";
-
-const mockFlights = [
-  {
-    id: 1,
-    airline: "Qatar Airways",
-    code: "QR",
-    price: 1428,
-    duration: "23h 40m",
-    durationMinutes: 1420,
-    stops: 2,
-    rating: 4.8,
-    departureTime: "10:15 AM",
-    arrivalTime: "4:55 PM",
-    connectionCities: ["Montreal", "Doha"],
-  },
-  {
-    id: 2,
-    airline: "Turkish Airlines",
-    code: "TK",
-    price: 1367,
-    duration: "25h 15m",
-    durationMinutes: 1515,
-    stops: 2,
-    rating: 4.7,
-    departureTime: "6:30 PM",
-    arrivalTime: "11:45 PM",
-    connectionCities: ["Toronto", "Istanbul"],
-  },
-  {
-    id: 3,
-    airline: "Air Canada",
-    code: "AC",
-    price: 1612,
-    duration: "24h 55m",
-    durationMinutes: 1495,
-    stops: 2,
-    rating: 4.6,
-    departureTime: "8:20 AM",
-    arrivalTime: "3:15 PM",
-    connectionCities: ["Toronto", "London"],
-  },
-  {
-    id: 4,
-    airline: "Emirates",
-    code: "EK",
-    price: 1549,
-    duration: "26h 10m",
-    durationMinutes: 1570,
-    stops: 2,
-    rating: 4.8,
-    departureTime: "2:40 PM",
-    arrivalTime: "8:50 PM",
-    connectionCities: ["Boston", "Dubai"],
-  },
-];
 
 function App() {
   const [tripType, setTripType] = useState("round-trip");
@@ -65,6 +11,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [sortBy, setSortBy] = useState("cheapest");
+  const [flights, setFlights] = useState([]);
+  const [apiError, setApiError] = useState("");
 
   const sameCity =
     origin.trim() !== "" &&
@@ -84,7 +32,7 @@ function App() {
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
@@ -132,6 +80,8 @@ function App() {
     if (Object.keys(newErrors).length > 0) {
       setSearchSummary(null);
       setSelectedFlight(null);
+      setFlights([]);
+      setApiError("");
       return;
     }
 
@@ -139,11 +89,20 @@ function App() {
     setSearchSummary(null);
     setSelectedFlight(null);
     setSortBy("cheapest");
+    setFlights([]);
+    setApiError("");
 
-    setTimeout(() => {
+    try {
+      const response = await searchFlights(
+        submittedOrigin,
+        submittedDestination
+      );
+
+      setFlights(response.flights);
+
       setSearchSummary({
-        origin: submittedOrigin,
-        destination: submittedDestination,
+        origin: response.origin,
+        destination: response.destination,
         departure,
         returnDate,
         passengers,
@@ -152,9 +111,15 @@ function App() {
         directFlights,
         tripType,
       });
+    } catch (error) {
+      console.error("Flight search failed:", error);
 
+      setApiError(
+        "We could not retrieve flights. Make sure the RouteWise backend is running."
+      );
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   }
 
   function formatOption(value) {
@@ -193,44 +158,74 @@ function App() {
     }).format(price);
   }
 
+  function formatDuration(durationMinutes) {
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+
+    return `${hours}h ${minutes}m`;
+  }
+
+  function formatTime(time) {
+    if (!time) {
+      return "";
+    }
+
+    const [hours, minutes] = time.split(":");
+    const date = new Date();
+
+    date.setHours(Number(hours));
+    date.setMinutes(Number(minutes));
+
+    return date.toLocaleTimeString("en-CA", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
   const visibleFlights = useMemo(() => {
     if (!searchSummary) {
       return [];
     }
 
-    let flights = [...mockFlights];
+    let filteredFlights = [...flights];
 
     if (searchSummary.airline !== "all") {
       const preferredAirline = formatOption(searchSummary.airline);
 
-      flights = flights.filter(
+      filteredFlights = filteredFlights.filter(
         (flight) =>
           flight.airline.toLowerCase() === preferredAirline.toLowerCase()
       );
     }
 
     if (searchSummary.directFlights) {
-      flights = flights.filter((flight) => flight.stops === 0);
+      filteredFlights = filteredFlights.filter(
+        (flight) => flight.stops === 0
+      );
     }
 
     if (sortBy === "cheapest") {
-      flights.sort((a, b) => a.price - b.price);
+      filteredFlights.sort((a, b) => a.price - b.price);
     }
 
     if (sortBy === "fastest") {
-      flights.sort((a, b) => a.durationMinutes - b.durationMinutes);
+      filteredFlights.sort(
+        (a, b) => a.durationMinutes - b.durationMinutes
+      );
     }
 
     if (sortBy === "highest-rated") {
-      flights.sort((a, b) => b.rating - a.rating);
+      filteredFlights.sort((a, b) => b.rating - a.rating);
     }
 
     if (sortBy === "fewest-stops") {
-      flights.sort((a, b) => a.stops - b.stops || a.price - b.price);
+      filteredFlights.sort(
+        (a, b) => a.stops - b.stops || a.price - b.price
+      );
     }
 
-    return flights;
-  }, [searchSummary, sortBy]);
+    return filteredFlights;
+  }, [flights, searchSummary, sortBy]);
 
   const flightInsights = useMemo(() => {
     if (visibleFlights.length === 0) {
@@ -247,8 +242,11 @@ function App() {
         : bestFlight
     );
 
-    const highestRated = visibleFlights.reduce((bestFlight, currentFlight) =>
-      currentFlight.rating > bestFlight.rating ? currentFlight : bestFlight
+    const highestRated = visibleFlights.reduce(
+      (bestFlight, currentFlight) =>
+        currentFlight.rating > bestFlight.rating
+          ? currentFlight
+          : bestFlight
     );
 
     return {
@@ -259,15 +257,9 @@ function App() {
   }, [visibleFlights]);
 
   function buildRoute(flight) {
-    if (!searchSummary) {
-      return "";
-    }
-
-    return [
-      formatCity(searchSummary.origin),
-      ...flight.connectionCities,
-      formatCity(searchSummary.destination),
-    ].join(" → ");
+    return `${formatCity(flight.origin)} → ${formatCity(
+      flight.destination
+    )}`;
   }
 
   return (
@@ -433,9 +425,8 @@ function App() {
               <select id="airline" name="airline" defaultValue="all">
                 <option value="all">All airlines</option>
                 <option value="air-canada">Air Canada</option>
-                <option value="qatar-airways">Qatar Airways</option>
-                <option value="emirates">Emirates</option>
-                <option value="turkish-airlines">Turkish Airlines</option>
+                <option value="westjet">WestJet</option>
+                <option value="porter-airlines">Porter Airlines</option>
               </select>
             </div>
 
@@ -454,7 +445,9 @@ function App() {
       {isLoading && (
         <section className="loading-card" aria-live="polite">
           <div className="spinner" />
+
           <h2>Searching for flights</h2>
+
           <p>
             Comparing routes from {formatCity(origin)} to{" "}
             {formatCity(destination)}...
@@ -462,7 +455,14 @@ function App() {
         </section>
       )}
 
-      {searchSummary && !isLoading && (
+      {apiError && !isLoading && (
+        <section className="empty-results" aria-live="polite">
+          <h3>Flight search failed</h3>
+          <p>{apiError}</p>
+        </section>
+      )}
+
+      {searchSummary && !isLoading && !apiError && (
         <section className="results-section" aria-live="polite">
           <div className="results-header">
             <div>
@@ -497,7 +497,9 @@ function App() {
 
               <article className="insight-card">
                 <span>Fastest flight</span>
-                <strong>{flightInsights.fastest.duration}</strong>
+                <strong>
+                  {formatDuration(flightInsights.fastest.durationMinutes)}
+                </strong>
                 <p>{flightInsights.fastest.airline}</p>
               </article>
 
@@ -544,7 +546,9 @@ function App() {
               {visibleFlights.map((flight) => (
                 <article className="flight-card" key={flight.id}>
                   <div className="airline-section">
-                    <div className="airline-logo">{flight.code}</div>
+                    <div className="airline-logo">
+                      {flight.airlineCode}
+                    </div>
 
                     <div>
                       <h3>{flight.airline}</h3>
@@ -555,20 +559,21 @@ function App() {
                   <div className="flight-time">
                     <div>
                       <span>Departure</span>
-                      <strong>{flight.departureTime}</strong>
+                      <strong>{formatTime(flight.departureTime)}</strong>
                     </div>
 
                     <div className="route-line">
-                      <span>{flight.duration}</span>
+                      <span>{formatDuration(flight.durationMinutes)}</span>
                       <div className="line" />
                       <span>
-                        {flight.stops} stop{flight.stops !== 1 ? "s" : ""}
+                        {flight.stops} stop
+                        {flight.stops !== 1 ? "s" : ""}
                       </span>
                     </div>
 
                     <div>
                       <span>Arrival</span>
-                      <strong>{flight.arrivalTime}</strong>
+                      <strong>{formatTime(flight.arrivalTime)}</strong>
                     </div>
                   </div>
 
@@ -602,11 +607,8 @@ function App() {
                       </div>
 
                       <div>
-                        <span>Flight code</span>
-                        <strong>
-                          {flight.code}
-                          {100 + flight.id}
-                        </strong>
+                        <span>Flight number</span>
+                        <strong>{flight.flightNumber}</strong>
                       </div>
 
                       <div>
@@ -632,7 +634,9 @@ function App() {
 
                       <div>
                         <span>Total duration</span>
-                        <strong>{flight.duration}</strong>
+                        <strong>
+                          {formatDuration(flight.durationMinutes)}
+                        </strong>
                       </div>
                     </div>
                   )}
@@ -641,7 +645,8 @@ function App() {
             </div>
           ) : (
             <div className="empty-results">
-              <h3>No matching mock flights found</h3>
+              <h3>No matching flights found</h3>
+
               <p>
                 Try selecting all airlines or turning off direct flights only.
               </p>
@@ -649,8 +654,9 @@ function App() {
           )}
 
           <p className="results-note">
-            These are sample results. Live pricing and availability will appear
-            after the flight API is connected.
+            These results currently come from the RouteWise mock backend.
+            Live pricing and availability will appear after the external
+            flight API is connected.
           </p>
         </section>
       )}
