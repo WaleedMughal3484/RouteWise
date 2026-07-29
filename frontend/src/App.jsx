@@ -13,6 +13,9 @@ function App() {
   const [sortBy, setSortBy] = useState("cheapest");
   const [flights, setFlights] = useState([]);
   const [apiError, setApiError] = useState("");
+  const [departureDate, setDepartureDate] = useState("");
+
+
 
   const sameCity =
     origin.trim() !== "" &&
@@ -372,10 +375,13 @@ function App() {
             <div className="form-group">
               <label htmlFor="departure">Departure</label>
 
-              <input
+                            <input
                 id="departure"
                 name="departure"
                 type="date"
+                min={new Date().toISOString().split("T")[0]}
+                value={departureDate}
+                onChange={(event) => setDepartureDate(event.target.value)}
                 aria-invalid={Boolean(errors.departure)}
                 aria-describedby={
                   errors.departure ? "departure-error" : undefined
@@ -393,15 +399,16 @@ function App() {
               <label htmlFor="return">Return</label>
 
               <input
-                id="return"
-                name="return"
-                type="date"
-                disabled={tripType === "one-way"}
-                aria-invalid={Boolean(errors.returnDate)}
-                aria-describedby={
-                  errors.returnDate ? "return-error" : undefined
-                }
-              />
+  id="return"
+  name="return"
+  type="date"
+  min={departureDate || new Date().toISOString().split("T")[0]}
+  disabled={tripType === "one-way"}
+  aria-invalid={Boolean(errors.returnDate)}
+  aria-describedby={
+    errors.returnDate ? "return-error" : undefined
+  }
+/>
 
               {errors.returnDate && (
                 <p className="error-message" id="return-error">
