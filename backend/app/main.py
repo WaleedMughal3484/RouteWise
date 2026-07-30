@@ -29,10 +29,6 @@ FLIGHTS_FILE = BASE_DIRECTORY / "data" / "flights.json"
 
 
 def load_flights() -> list[dict[str, Any]]:
-    """
-    Load flight records from the JSON data file.
-    """
-
     try:
         with FLIGHTS_FILE.open("r", encoding="utf-8") as file:
             flights = json.load(file)
@@ -87,18 +83,17 @@ def get_flights(
 
     stored_flights = load_flights()
 
-    flights = [
-        {
-            **flight,
-            "origin": formatted_origin,
-            "destination": formatted_destination,
-        }
+    matching_flights = [
+        flight
         for flight in stored_flights
+        if flight.get("origin", "").casefold() == formatted_origin.casefold()
+        and flight.get("destination", "").casefold()
+        == formatted_destination.casefold()
     ]
 
     return {
         "origin": formatted_origin,
         "destination": formatted_destination,
-        "count": len(flights),
-        "flights": flights,
+        "count": len(matching_flights),
+        "flights": matching_flights,
     }
