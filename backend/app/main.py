@@ -1,5 +1,10 @@
-from fastapi import FastAPI, Query
+import json
+from pathlib import Path
+from typing import Any
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(
     title="RouteWise API",
@@ -17,6 +22,38 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+BASE_DIRECTORY = Path(__file__).resolve().parent
+FLIGHTS_FILE = BASE_DIRECTORY / "data" / "flights.json"
+
+
+def load_flights() -> list[dict[str, Any]]:
+    """
+    Load flight records from the JSON data file.
+    """
+
+    try:
+        with FLIGHTS_FILE.open("r", encoding="utf-8") as file:
+            flights = json.load(file)
+    except FileNotFoundError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="The flight data file could not be found.",
+        ) from error
+    except json.JSONDecodeError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="The flight data file contains invalid JSON.",
+        ) from error
+
+    if not isinstance(flights, list):
+        raise HTTPException(
+            status_code=500,
+            detail="The flight data file must contain a list of flights.",
+        )
+
+    return flights
 
 
 @app.get("/")
@@ -38,53 +75,25 @@ def health_check() -> dict[str, str]:
 def get_flights(
     origin: str = Query(..., min_length=2, max_length=50),
     destination: str = Query(..., min_length=2, max_length=50),
-) -> dict:
+) -> dict[str, Any]:
     formatted_origin = origin.strip().title()
     formatted_destination = destination.strip().title()
 
+    if formatted_origin.casefold() == formatted_destination.casefold():
+        raise HTTPException(
+            status_code=400,
+            detail="Origin and destination must be different.",
+        )
+
+    stored_flights = load_flights()
+
     flights = [
         {
-            "id": 1,
-            "airline": "Air Canada",
-            "airlineCode": "AC",
-            "flightNumber": "AC101",
+            **flight,
             "origin": formatted_origin,
             "destination": formatted_destination,
-            "departureTime": "08:30",
-            "arrivalTime": "11:45",
-            "durationMinutes": 195,
-            "stops": 0,
-            "price": 425,
-            "rating": 4.5,
-        },
-        {
-            "id": 2,
-            "airline": "WestJet",
-            "airlineCode": "WS",
-            "flightNumber": "WS220",
-            "origin": formatted_origin,
-            "destination": formatted_destination,
-            "departureTime": "12:15",
-            "arrivalTime": "16:10",
-            "durationMinutes": 235,
-            "stops": 1,
-            "price": 365,
-            "rating": 4.2,
-        },
-        {
-            "id": 3,
-            "airline": "Porter Airlines",
-            "airlineCode": "PD",
-            "flightNumber": "PD450",
-            "origin": formatted_origin,
-            "destination": formatted_destination,
-            "departureTime": "17:40",
-            "arrivalTime": "21:05",
-            "durationMinutes": 205,
-            "stops": 0,
-            "price": 395,
-            "rating": 4.4,
-        },
+        }
+        for flight in stored_flights
     ]
 
     return {
