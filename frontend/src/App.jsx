@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { searchFlights } from "./services/api";
 import "./App.css";
+import RecentSearches from "./components/RecentSearches";
+import useRecentSearches from "./hooks/useRecentSearches";
 
 function App() {
   const [tripType, setTripType] = useState("round-trip");
@@ -14,6 +16,10 @@ function App() {
   const [flights, setFlights] = useState([]);
   const [apiError, setApiError] = useState("");
   const [departureDate, setDepartureDate] = useState("");
+  const {
+    recentSearches,
+    addSearch,
+} = useRecentSearches();
 
   const sameCity =
     origin.trim() !== "" &&
@@ -130,6 +136,14 @@ function App() {
         directFlights,
         tripType,
       });
+
+      addSearch({
+    origin: response.origin,
+    destination: response.destination,
+    departure,
+});
+
+
     } catch (error) {
       console.error("Flight search failed:", error);
 
@@ -315,6 +329,11 @@ function App() {
     )} → ${formatCity(flight.destination)}`;
   }
 
+  function handleRecentSearch(search) {
+    setOrigin(search.origin);
+    setDestination(search.destination);
+    setDepartureDate(search.departure);
+}
   return (
     <main className="app">
       <header className="hero">
@@ -600,7 +619,15 @@ function App() {
         </form>
       </section>
 
-      {isLoading && (
+<RecentSearches
+    recentSearches={recentSearches}
+    onSelect={handleRecentSearch}
+/>
+
+{isLoading && (
+
+  
+        
         <section
           className="loading-card"
           aria-live="polite"
@@ -615,6 +642,8 @@ function App() {
           </p>
         </section>
       )}
+
+      
 
       {apiError && !isLoading && (
         <section
