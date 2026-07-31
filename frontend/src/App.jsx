@@ -6,6 +6,8 @@ import useRecentSearches from "./hooks/useRecentSearches";
 import Favorites from "./components/Favorites";
 import useFavorites from "./hooks/useFavorites";
 import AirportAutocomplete from "./components/AirportAutocomplete";
+import FlightComparison from "./components/FlightComparison";
+import useFlightComparison from "./hooks/useFlightComparison";
 
 
 
@@ -42,6 +44,15 @@ const {
   removeFavorite,
   clearFavorites,
 } = useFavorites();
+
+const {
+  comparedFlights,
+  isCompared,
+  toggleComparison,
+  removeComparedFlight,
+  clearComparison,
+  comparisonLimit,
+} = useFlightComparison();
 
   const sameCity =
     origin.trim() !== "" &&
@@ -119,18 +130,19 @@ const {
     }
 
     if (
-  submittedMaxPrice &&
-  Number(submittedMaxPrice) <= 0
-) {
-  newErrors.maxPrice =
-    "Maximum price must be greater than zero.";
-}
+      submittedMaxPrice &&
+      Number(submittedMaxPrice) <= 0
+    ) {
+      newErrors.maxPrice =
+        "Maximum price must be greater than zero.";
+    }
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
       setSearchSummary(null);
       setSelectedFlight(null);
+      clearComparison();
       setFlights([]);
       setApiError("");
       return;
@@ -139,6 +151,7 @@ const {
     setIsLoading(true);
     setSearchSummary(null);
     setSelectedFlight(null);
+    clearComparison();
     setSortBy("cheapest");
     setFlights([]);
     setApiError("");
@@ -150,36 +163,36 @@ const {
           : formatOption(airline);
 
       const response = await searchFlights({
-      origin: submittedOrigin,
-      destination: submittedDestination,
-      airline: backendAirline,
-      directOnly: directFlights,
-      maxPrice: submittedMaxPrice
-        ? Number(submittedMaxPrice)
-        : undefined,
-      sortBy: "price_asc",
-    });
+        origin: submittedOrigin,
+        destination: submittedDestination,
+        airline: backendAirline,
+        directOnly: directFlights,
+        maxPrice: submittedMaxPrice
+          ? Number(submittedMaxPrice)
+          : undefined,
+        sortBy: "price_asc",
+      });
 
       setFlights(response.flights);
 
       setSearchSummary({
-      origin: response.origin,
-      destination: response.destination,
-      departure,
-      returnDate: submittedReturnDate,
-      passengers: submittedPassengers,
-      cabinClass,
-      airline,
-      directFlights,
-      maxPrice: submittedMaxPrice,
-      tripType,
-    });
+        origin: response.origin,
+        destination: response.destination,
+        departure,
+        returnDate: submittedReturnDate,
+        passengers: submittedPassengers,
+        cabinClass,
+        airline,
+        directFlights,
+        maxPrice: submittedMaxPrice,
+        tripType,
+      });
 
       addSearch({
-    origin: response.origin,
-    destination: response.destination,
-    departure,
-});
+        origin: response.origin,
+        destination: response.destination,
+        departure,
+      });
 
 
     } catch (error) {
@@ -377,6 +390,7 @@ const {
     setSelectedOriginAirport(null);
     setSelectedDestinationAirport(null);
   }
+
   return (
     <main className="app">
       <header className="hero">
@@ -698,6 +712,15 @@ const {
   formatDuration={formatDuration}
 />
 
+<FlightComparison
+  flights={comparedFlights}
+  onRemove={removeComparedFlight}
+  onClear={clearComparison}
+  formatPrice={formatPrice}
+  formatDuration={formatDuration}
+  formatTime={formatTime}
+/>
+
 {isLoading && (
 
   
@@ -852,8 +875,8 @@ const {
                   <h3>Compare flights</h3>
 
                   <p>
-                    Sort the available options
-                    based on your priorities.
+                    Select up to three flights, then compare
+                    price, duration, stops, and rating.
                   </p>
                 </div>
 
@@ -949,19 +972,52 @@ const {
 
                     <div className="flight-price">
                       <button
-  type="button"
-  className={`favorite-button ${
-    isFavorite(flight.id) ? "favorite-active" : ""
-  }`}
-  onClick={() => toggleFavorite(flight)}
-  aria-label={
-    isFavorite(flight.id)
-      ? `Remove ${flight.airline} flight from favorites`
-      : `Save ${flight.airline} flight to favorites`
-  }
->
-  {isFavorite(flight.id) ? "♥ Saved" : "♡ Save"}
-</button>
+                        type="button"
+                        className={`favorite-button ${
+                          isFavorite(flight.id)
+                            ? "favorite-active"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          toggleFavorite(flight)
+                        }
+                        aria-label={
+                          isFavorite(flight.id)
+                            ? `Remove ${flight.airline} flight from favorites`
+                            : `Save ${flight.airline} flight to favorites`
+                        }
+                      >
+                        {isFavorite(flight.id)
+                          ? "♥ Saved"
+                          : "♡ Save"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`compare-button ${
+                          isCompared(flight.id)
+                            ? "compare-active"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          toggleComparison(flight)
+                        }
+                        disabled={
+                          !isCompared(flight.id) &&
+                          comparedFlights.length >=
+                            comparisonLimit
+                        }
+                        aria-label={
+                          isCompared(flight.id)
+                            ? `Remove ${flight.airline} flight from comparison`
+                            : `Add ${flight.airline} flight to comparison`
+                        }
+                      >
+                        {isCompared(flight.id)
+                          ? "✓ Comparing"
+                          : `Compare (${comparedFlights.length}/${comparisonLimit})`}
+                      </button>
+
                       <div className="rating">
                         ★ {flight.rating}
                       </div>
@@ -1066,8 +1122,9 @@ const {
                 </h3>
 
                 <p>
-                  Try selecting all airlines or
-                  turning off direct flights only.
+                  Try increasing your maximum price,
+                  selecting all airlines, or turning off
+                  direct flights only.
                 </p>
               </div>
             )}

@@ -931,3 +931,160 @@ button:disabled:hover {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Flight comparison */
+.compare-button {
+    width: auto;
+    min-width: 0;
+    margin-bottom: 12px;
+    padding: 8px 13px;
+    border: 1px solid #d7dce5;
+    background: white;
+    color: #172033;
+    font-size: 0.82rem;
+}
+
+.compare-button:hover {
+    border-color: #172033;
+    background: #f5f7fb;
+    color: #172033;
+}
+
+.compare-button.compare-active {
+    border-color: #172033;
+    background: #eef1f7;
+    color: #172033;
+}
+
+.compare-button:disabled {
+    border-color: #e2e6ed;
+    background: #f0f2f6;
+    color: #8b93a3;
+}
+
+.comparison-section {
+    max-width: 1000px;
+    margin: 28px auto 0;
+    padding: 28px 32px;
+    border-radius: 18px;
+    background: white;
+    box-shadow: 0 18px 50px rgba(23, 32, 51, 0.1);
+}
+
+.comparison-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 22px;
+}
+
+.comparison-header h2 {
+    margin: 0 0 8px;
+}
+
+.comparison-header p {
+    margin: 0;
+    color: #5b6475;
+}
+
+.comparison-eyebrow {
+    margin-bottom: 8px !important;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.clear-comparison-button {
+    width: auto;
+    min-width: 0;
+    padding: 10px 16px;
+    border: 1px solid #172033;
+    background: white;
+    color: #172033;
+}
+
+.clear-comparison-button:hover {
+    background: #172033;
+    color: white;
+}
+
+.comparison-hint {
+    margin: 0;
+    padding: 18px;
+    border: 1px dashed #cfd5df;
+    border-radius: 12px;
+    color: #5b6475;
+    text-align: center;
+}
+
+.comparison-table-wrapper {
+    overflow-x: auto;
+}
+
+.comparison-table {
+    width: 100%;
+    min-width: 680px;
+    border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 14px;
+    border: 1px solid #e2e6ed;
+    text-align: left;
+    vertical-align: top;
+}
+
+.comparison-table thead th {
+    background: #f5f7fb;
+}
+
+.comparison-table tbody th {
+    width: 140px;
+    background: #f8f9fc;
+}
+
+.comparison-flight-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.comparison-flight-heading span {
+    color: #697386;
+    font-size: 0.82rem;
+}
+
+.comparison-flight-heading button {
+    align-self: flex-start;
+    width: auto;
+    min-width: 0;
+    margin-top: 6px;
+    padding: 7px 10px;
+    border: 1px solid #b42318;
+    background: white;
+    color: #b42318;
+    font-size: 0.78rem;
+}
+
+.comparison-flight-heading button:hover {
+    background: #b42318;
+    color: white;
+}
+
+@media (max-width: 700px) {
+    .comparison-section {
+        padding: 24px;
+    }
+
+    .comparison-header {
+        flex-direction: column;
+    }
+
+    .clear-comparison-button {
+        width: 100%;
+    }
+}
