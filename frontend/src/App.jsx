@@ -377,6 +377,104 @@ const {
     };
   }, [visibleFlights]);
 
+  const bestValueFlightId = useMemo(() => {
+    if (visibleFlights.length === 0) {
+      return null;
+    }
+
+    const prices = visibleFlights.map(
+      (flight) => flight.price
+    );
+    const durations = visibleFlights.map(
+      (flight) => flight.durationMinutes
+    );
+    const ratings = visibleFlights.map(
+      (flight) => flight.rating
+    );
+    const stops = visibleFlights.map(
+      (flight) => flight.stops
+    );
+
+    const minPrice = Math.min(...prices);
+    const maxPriceValue = Math.max(...prices);
+    const minDuration = Math.min(...durations);
+    const maxDuration = Math.max(...durations);
+    const minRating = Math.min(...ratings);
+    const maxRating = Math.max(...ratings);
+    const minStops = Math.min(...stops);
+    const maxStops = Math.max(...stops);
+
+    function normalizeLowerIsBetter(
+      value,
+      minimum,
+      maximum
+    ) {
+      if (maximum === minimum) {
+        return 1;
+      }
+
+      return 1 - (value - minimum) / (maximum - minimum);
+    }
+
+    function normalizeHigherIsBetter(
+      value,
+      minimum,
+      maximum
+    ) {
+      if (maximum === minimum) {
+        return 1;
+      }
+
+      return (value - minimum) / (maximum - minimum);
+    }
+
+    const scoredFlights = visibleFlights.map(
+      (flight) => {
+        const priceScore = normalizeLowerIsBetter(
+          flight.price,
+          minPrice,
+          maxPriceValue
+        );
+
+        const durationScore = normalizeLowerIsBetter(
+          flight.durationMinutes,
+          minDuration,
+          maxDuration
+        );
+
+        const stopsScore = normalizeLowerIsBetter(
+          flight.stops,
+          minStops,
+          maxStops
+        );
+
+        const ratingScore = normalizeHigherIsBetter(
+          flight.rating,
+          minRating,
+          maxRating
+        );
+
+        const score =
+          priceScore * 0.4 +
+          durationScore * 0.25 +
+          stopsScore * 0.2 +
+          ratingScore * 0.15;
+
+        return {
+          id: flight.id,
+          score,
+        };
+      }
+    );
+
+    scoredFlights.sort(
+      (firstFlight, secondFlight) =>
+        secondFlight.score - firstFlight.score
+    );
+
+    return scoredFlights[0].id;
+  }, [visibleFlights]);
+
   function buildRoute(flight) {
     return `${formatCity(
       flight.origin
@@ -876,7 +974,8 @@ const {
 
                   <p>
                     Select up to three flights, then compare
-                    price, duration, stops, and rating.
+                    price, duration, stops, and rating. The
+                    Best Value badge balances all four factors.
                   </p>
                 </div>
 
@@ -923,6 +1022,12 @@ const {
                       </div>
 
                       <div>
+                        {flight.id === bestValueFlightId && (
+                          <span className="best-value-badge">
+                            Best Value
+                          </span>
+                        )}
+
                         <h3>{flight.airline}</h3>
 
                         <p>
