@@ -4,54 +4,44 @@ export async function searchFlights({
   origin,
   destination,
   airline,
-  directOnly = false,
+  directOnly,
   maxPrice,
   sortBy,
 }) {
-  const query = new URLSearchParams({
-    origin,
-    destination,
-  });
+  const params = new URLSearchParams();
+
+  if (origin) {
+    params.set("origin", origin);
+  }
+
+  if (destination) {
+    params.set("destination", destination);
+  }
 
   if (airline) {
-    query.set("airline", airline);
+    params.set("airline", airline);
   }
 
   if (directOnly) {
-    query.set("direct_only", "true");
+    params.set("direct_only", "true");
   }
 
-  if (
-    maxPrice !== undefined &&
-    maxPrice !== null &&
-    maxPrice !== ""
-  ) {
-    query.set("max_price", String(maxPrice));
+  if (maxPrice !== undefined) {
+    params.set("max_price", String(maxPrice));
   }
 
   if (sortBy) {
-    query.set("sort_by", sortBy);
+    params.set("sort_by", sortBy);
   }
 
   const response = await fetch(
-    `${API_BASE_URL}/api/flights?${query.toString()}`
+    `${API_BASE_URL}/api/flights?${params.toString()}`
   );
 
   if (!response.ok) {
-    let message =
-      "Unable to retrieve flights from the RouteWise API.";
-
-    try {
-      const errorData = await response.json();
-
-      if (errorData.detail) {
-        message = errorData.detail;
-      }
-    } catch {
-      // Keep the default message if the response is not JSON.
-    }
-
-    throw new Error(message);
+    throw new Error(
+      `Flight search failed with status ${response.status}`
+    );
   }
 
   return response.json();

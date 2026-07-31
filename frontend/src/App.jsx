@@ -5,6 +5,9 @@ import RecentSearches from "./components/RecentSearches";
 import useRecentSearches from "./hooks/useRecentSearches";
 import Favorites from "./components/Favorites";
 import useFavorites from "./hooks/useFavorites";
+import AirportAutocomplete from "./components/AirportAutocomplete";
+
+
 
 function App() {
   const [tripType, setTripType] = useState("round-trip");
@@ -18,6 +21,15 @@ function App() {
   const [flights, setFlights] = useState([]);
   const [apiError, setApiError] = useState("");
   const [departureDate, setDepartureDate] = useState("");
+  const [returnDate, setReturnDate] = useState("");
+  const [passengers, setPassengers] = useState("1");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [selectedOriginAirport, setSelectedOriginAirport] =
+  useState(null);
+
+const [selectedDestinationAirport, setSelectedDestinationAirport] =
+  useState(null);
+  
   const {
   recentSearches,
   addSearch,
@@ -43,6 +55,7 @@ const {
     setTripType(selectedTripType);
 
     if (selectedTripType === "one-way") {
+      setReturnDate("");
       setErrors((currentErrors) => ({
         ...currentErrors,
         returnDate: "",
@@ -53,6 +66,8 @@ const {
   function handleSwapCities() {
     setOrigin(destination);
     setDestination(origin);
+    setSelectedOriginAirport(selectedDestinationAirport);
+    setSelectedDestinationAirport(selectedOriginAirport);
     setErrors({});
     setApiError("");
   }
@@ -64,11 +79,12 @@ const {
 
     const submittedOrigin = origin.trim();
     const submittedDestination = destination.trim();
-    const departure = formData.get("departure");
-    const returnDate = formData.get("return");
-    const passengers = formData.get("passengers");
+    const departure = departureDate;
+    const submittedReturnDate = returnDate;
+    const submittedPassengers = passengers;
     const cabinClass = formData.get("cabinClass");
     const airline = formData.get("airline");
+    const submittedMaxPrice = maxPrice.trim();
     const directFlights =
       formData.get("directFlights") === "on";
 
@@ -95,12 +111,20 @@ const {
     if (
       tripType === "round-trip" &&
       departure &&
-      returnDate &&
-      returnDate < departure
+      submittedReturnDate &&
+      submittedReturnDate < departure
     ) {
       newErrors.returnDate =
         "The return date cannot be earlier than the departure date.";
     }
+
+    if (
+  submittedMaxPrice &&
+  Number(submittedMaxPrice) <= 0
+) {
+  newErrors.maxPrice =
+    "Maximum price must be greater than zero.";
+}
 
     setErrors(newErrors);
 
@@ -126,26 +150,30 @@ const {
           : formatOption(airline);
 
       const response = await searchFlights({
-        origin: submittedOrigin,
-        destination: submittedDestination,
-        airline: backendAirline,
-        directOnly: directFlights,
-        sortBy: "price_asc",
-      });
+      origin: submittedOrigin,
+      destination: submittedDestination,
+      airline: backendAirline,
+      directOnly: directFlights,
+      maxPrice: submittedMaxPrice
+        ? Number(submittedMaxPrice)
+        : undefined,
+      sortBy: "price_asc",
+    });
 
       setFlights(response.flights);
 
       setSearchSummary({
-        origin: response.origin,
-        destination: response.destination,
-        departure,
-        returnDate,
-        passengers,
-        cabinClass,
-        airline,
-        directFlights,
-        tripType,
-      });
+      origin: response.origin,
+      destination: response.destination,
+      departure,
+      returnDate: submittedReturnDate,
+      passengers: submittedPassengers,
+      cabinClass,
+      airline,
+      directFlights,
+      maxPrice: submittedMaxPrice,
+      tripType,
+    });
 
       addSearch({
     origin: response.origin,
@@ -200,6 +228,9 @@ const {
         destination: searchSummary.destination,
         airline: backendAirline,
         directOnly: searchSummary.directFlights,
+        maxPrice: searchSummary.maxPrice
+          ? Number(searchSummary.maxPrice)
+          : undefined,
         sortBy: backendSortOptions[selectedSort],
       });
 
@@ -343,7 +374,9 @@ const {
     setOrigin(search.origin);
     setDestination(search.destination);
     setDepartureDate(search.departure);
-}
+    setSelectedOriginAirport(null);
+    setSelectedDestinationAirport(null);
+  }
   return (
     <main className="app">
       <header className="hero">
@@ -389,25 +422,17 @@ const {
             </label>
           </div>
 
+
           <div className="form-fields">
             <div className="form-group">
-              <label htmlFor="origin">From</label>
-
-              <input
+              <AirportAutocomplete
                 id="origin"
-                name="origin"
-                type="text"
-                placeholder="Halifax"
+                label="From"
                 value={origin}
-                onChange={(event) =>
-                  setOrigin(event.target.value)
-                }
-                aria-invalid={Boolean(errors.origin)}
-                aria-describedby={
-                  errors.origin
-                    ? "origin-error"
-                    : undefined
-                }
+                placeholder="City, airport or code"
+                onChange={setOrigin}
+                onAirportSelect={setSelectedOriginAirport}
+                hasError={Boolean(errors.origin)}
               />
 
               {errors.origin && (
@@ -416,6 +441,34 @@ const {
                   id="origin-error"
                 >
                   {errors.origin}
+                </p>
+              )}
+            </div>
+
+            <div className="form-group">
+              <AirportAutocomplete
+                id="destination"
+                label="To"
+                value={destination}
+                placeholder="City, airport or code"
+                onChange={setDestination}
+                onAirportSelect={
+                  setSelectedDestinationAirport
+                }
+                hasError={
+                  Boolean(errors.destination) ||
+                  sameCity
+                }
+              />
+
+              {(errors.destination || sameCity) && (
+                <p
+                  className="error-message"
+                  id="destination-error"
+                >
+                  {sameCity
+                    ? "Your destination must be different from your departure city."
+                    : errors.destination}
                 </p>
               )}
             </div>
@@ -430,40 +483,6 @@ const {
               >
                 ⇄
               </button>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="destination">To</label>
-
-              <input
-                id="destination"
-                name="destination"
-                type="text"
-                placeholder="Lahore"
-                value={destination}
-                onChange={(event) =>
-                  setDestination(event.target.value)
-                }
-                aria-invalid={
-                  Boolean(errors.destination) || sameCity
-                }
-                aria-describedby={
-                  errors.destination || sameCity
-                    ? "destination-error"
-                    : undefined
-                }
-              />
-
-              {(errors.destination || sameCity) && (
-                <p
-                  className="error-message"
-                  id="destination-error"
-                >
-                  {sameCity
-                    ? "Your destination must be different from your departure city."
-                    : errors.destination}
-                </p>
-              )}
             </div>
 
             <div className="form-group">
@@ -517,6 +536,10 @@ const {
                     .toISOString()
                     .split("T")[0]
                 }
+                value={returnDate}
+                onChange={(event) =>
+                  setReturnDate(event.target.value)
+                }
                 disabled={tripType === "one-way"}
                 aria-invalid={Boolean(
                   errors.returnDate
@@ -549,8 +572,47 @@ const {
                 type="number"
                 min="1"
                 max="9"
-                defaultValue="1"
+                value={passengers}
+                onChange={(event) =>
+                  setPassengers(event.target.value)
+                }
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="maxPrice">
+                Maximum price (CAD)
+              </label>
+
+              <input
+                id="maxPrice"
+                name="maxPrice"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Example: 500"
+                value={maxPrice}
+                onChange={(event) =>
+                  setMaxPrice(event.target.value)
+                }
+                aria-invalid={Boolean(
+                  errors.maxPrice
+                )}
+                aria-describedby={
+                  errors.maxPrice
+                    ? "max-price-error"
+                    : undefined
+                }
+              />
+
+              {errors.maxPrice && (
+                <p
+                  className="error-message"
+                  id="max-price-error"
+                >
+                  {errors.maxPrice}
+                </p>
+              )}
             </div>
 
             <div className="form-group">
@@ -566,15 +628,12 @@ const {
                 <option value="economy">
                   Economy
                 </option>
-
                 <option value="premium-economy">
                   Premium economy
                 </option>
-
                 <option value="business">
                   Business
                 </option>
-
                 <option value="first">
                   First class
                 </option>
@@ -594,15 +653,12 @@ const {
                 <option value="all">
                   All airlines
                 </option>
-
                 <option value="air-canada">
                   Air Canada
                 </option>
-
                 <option value="westjet">
                   WestJet
                 </option>
-
                 <option value="porter-airlines">
                   Porter Airlines
                 </option>
@@ -891,8 +947,8 @@ const {
                       </div>
                     </div>
 
-                    <div className="flight-price"
-                    ><button
+                    <div className="flight-price">
+                      <button
   type="button"
   className={`favorite-button ${
     isFavorite(flight.id) ? "favorite-active" : ""

@@ -87,9 +87,10 @@ h1 {
 }
 
 .form-fields {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
+    gap: 22px;
 }
 
 .form-group {
@@ -657,15 +658,12 @@ button:disabled:hover {
     }
 }
 
-.form-fields {
-    position: relative;
-}
 
 .swap-control {
     position: absolute;
-    top: 28px;
+    top: 29px;
     left: 50%;
-    z-index: 2;
+    z-index: 10;
     display: flex;
     transform: translateX(-50%);
 }
@@ -704,6 +702,7 @@ button:disabled:hover {
 @media (max-width: 700px) {
     .swap-control {
         position: static;
+        grid-column: 1;
         justify-content: center;
         transform: none;
     }
@@ -932,4 +931,3 @@ button:disabled:hover {
         grid-template-columns: 1fr;
     }
 }
-
