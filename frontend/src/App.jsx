@@ -3,6 +3,8 @@ import { searchFlights } from "./services/api";
 import "./App.css";
 import RecentSearches from "./components/RecentSearches";
 import useRecentSearches from "./hooks/useRecentSearches";
+import Favorites from "./components/Favorites";
+import useFavorites from "./hooks/useFavorites";
 
 function App() {
   const [tripType, setTripType] = useState("round-trip");
@@ -17,9 +19,17 @@ function App() {
   const [apiError, setApiError] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const {
-    recentSearches,
-    addSearch,
+  recentSearches,
+  addSearch,
 } = useRecentSearches();
+
+const {
+  favorites,
+  isFavorite,
+  toggleFavorite,
+  removeFavorite,
+  clearFavorites,
+} = useFavorites();
 
   const sameCity =
     origin.trim() !== "" &&
@@ -624,6 +634,14 @@ function App() {
     onSelect={handleRecentSearch}
 />
 
+<Favorites
+  favorites={favorites}
+  onRemove={removeFavorite}
+  onClear={clearFavorites}
+  formatPrice={formatPrice}
+  formatDuration={formatDuration}
+/>
+
 {isLoading && (
 
   
@@ -873,7 +891,21 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="flight-price">
+                    <div className="flight-price"
+                    ><button
+  type="button"
+  className={`favorite-button ${
+    isFavorite(flight.id) ? "favorite-active" : ""
+  }`}
+  onClick={() => toggleFavorite(flight)}
+  aria-label={
+    isFavorite(flight.id)
+      ? `Remove ${flight.airline} flight from favorites`
+      : `Save ${flight.airline} flight to favorites`
+  }
+>
+  {isFavorite(flight.id) ? "♥ Saved" : "♡ Save"}
+</button>
                       <div className="rating">
                         ★ {flight.rating}
                       </div>
