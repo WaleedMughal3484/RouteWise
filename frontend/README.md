@@ -1,41 +1,63 @@
-# ✈️ RouteWise
+# ✈️ RouteWise: Flight Intelligence Platform
 
-RouteWise is a full-stack Flight Intelligence Platform built with **React**, **Vite**, and **FastAPI**. It helps users search, compare, and explore flights through an intuitive interface with filtering, sorting, airport autocomplete, favorites, and flight comparison.
+RouteWise is a full-stack flight intelligence platform that allows users to search, compare, and analyze domestic and international flight routes. It provides an intuitive interface for exploring flights, filtering results, comparing options, and saving favorite itineraries. The application uses a FastAPI backend with a simulated flight database and a React frontend.
 
-> **Note:** RouteWise currently uses a simulated flight database for demonstration purposes. The project is designed so that a live flight API can be integrated in the future.
+## Features
+
+### Flight Search
+Search flights by:
+
+- Origin
+- Destination
+- Departure Date
+- Return Date
+- Trip Type (One-Way / Round Trip)
+
+### Airport Autocomplete
+
+- Search by city, airport name, or IATA code
+- Supports domestic and international airports
+
+### Flight Filters
+
+- Maximum Price
+- Preferred Airline
+- Cabin Class
+- Direct Flights Only
+
+### Flight Comparison
+
+Compare up to three flights side-by-side based on:
+
+- Price
+- Duration
+- Rating
+- Number of Stops
+
+### Flight Insights
+
+The application automatically highlights:
+
+- Cheapest Flight
+- Fastest Flight
+- Highest Rated Flight
+- Average Flight Price
+- Best Value Recommendation
+
+### Additional Features
+
+- Favorite Flights
+- Recent Searches
+- Flight Details
+- Responsive Design
+- Search Validation
+- Friendly Error Handling
+- Loading States
+- Reset Search
 
 ---
 
-# Features
-
-- 🔍 Search flights by origin and destination
-- ✈️ Airport autocomplete with airport names and IATA codes
-- 📅 One-way and round-trip flight search
-- 💲 Maximum price filter
-- 🛫 Direct flights only filter
-- 🏢 Preferred airline selection
-- 💺 Cabin class selection
-- 📊 Sort flights by:
-  - Cheapest
-  - Fastest
-  - Highest Rated
-  - Fewest Stops
-- ⭐ Save favorite flights
-- 🕒 Recent search history
-- ⚖️ Compare up to 3 flights side-by-side
-- 📈 Flight insights:
-  - Cheapest flight
-  - Fastest flight
-  - Highest rated flight
-  - Average flight price
-- 📱 Responsive design for desktop and mobile
-- 🔄 Swap departure and destination airports
-- 📄 View detailed flight information
-- 🚫 Friendly validation and error handling
-
----
-
-# Tech Stack
+# Technology Stack
 
 ## Frontend
 
@@ -50,12 +72,9 @@ RouteWise is a full-stack Flight Intelligence Platform built with **React**, **V
 - FastAPI
 - Uvicorn
 
-## Data
+## Data Storage
 
-- JSON-based mock flight database
-
----
-
+- JSON Flight Database
 
 ---
 
@@ -69,25 +88,25 @@ Navigate to the backend folder:
 cd backend
 ```
 
-Install dependencies:
+Install the required packages:
 
 ```bash
 pip install fastapi uvicorn
 ```
 
-Start the backend server:
+Run the backend server:
 
 ```bash
 python -m uvicorn app.main:app --reload
 ```
 
-The backend will run at:
+The backend will be available at:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-API documentation:
+API Documentation:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -96,6 +115,8 @@ http://127.0.0.1:8000/docs
 ---
 
 ## Frontend
+
+Open a second terminal.
 
 Navigate to the frontend folder:
 
@@ -109,13 +130,13 @@ Install dependencies:
 npm install
 ```
 
-Run the development server:
+Start the React application:
 
 ```bash
 npm run dev
 ```
 
-The frontend will run at:
+The frontend will be available at:
 
 ```text
 http://localhost:5173
@@ -123,62 +144,34 @@ http://localhost:5173
 
 ---
 
-# Example Search
+# Example Searches
 
-Try searching:
+Try the following routes:
 
 ```text
-From: Halifax
-To: Toronto
+Halifax → Toronto
+Toronto → London
+Toronto → Tokyo
+Halifax → Lahore
+Dubai → Lahore
+Vancouver → Tokyo
 ```
-
-This route contains multiple flights in the sample database and demonstrates all filtering and comparison features.
 
 ---
 
 # Current Features
 
-- Airport autocomplete
-- Flight search
-- Search filters
-- Flight sorting
-- Flight comparison
-- Favorite flights
-- Recent searches
-- Flight details
-- Search validation
-- Loading state
-- Responsive layout
+- Airport Autocomplete
+- Flight Search
+- Flight Filtering
+- Flight Sorting
+- Flight Comparison
+- Best Value Recommendation
+- Flight Insights
+- Favorites
+- Recent Searches
+- Flight Details
+- Responsive Interface
+- Backend Validation
 
 ---
-
-# Future Improvements
-
-- Live worldwide flight API integration
-- Real-time prices and availability
-- Multi-city itinerary support
-- Flight route map
-- PDF itinerary export
-- User authentication
-- Booking integration
-
----
-
-# Screenshots
-
-
-Example:
-
-
----
-
-# Author
-
-**Waleed Mughal**
-
-Bachelor of Computer Science (Co-op)
-
-Dalhousie University
-
-GitHub:
-https://github.com/WaleedMughal3484
