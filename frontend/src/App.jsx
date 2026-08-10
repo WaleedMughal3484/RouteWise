@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { searchFlights } from "./services/api";
+import { searchFlights, searchLiveFlights } from "./services/api";
 import "./App.css";
 import RecentSearches from "./components/RecentSearches";
 import useRecentSearches from "./hooks/useRecentSearches";
@@ -9,7 +9,20 @@ import AirportAutocomplete from "./components/AirportAutocomplete";
 import FlightComparison from "./components/FlightComparison";
 import useFlightComparison from "./hooks/useFlightComparison";
 
+// Matches the "code" field on objects from data/airports.js
+function getAirportCode(airportObject) {
+  if (!airportObject) {
+    return null;
+  }
 
+  const candidate = airportObject.code || null;
+
+  if (candidate && /^[A-Za-z]{3}$/.test(candidate)) {
+    return candidate.toUpperCase();
+  }
+
+  return null;
+}
 
 function App() {
   const [tripType, setTripType] = useState("round-trip");
@@ -31,7 +44,7 @@ function App() {
 
 const [selectedDestinationAirport, setSelectedDestinationAirport] =
   useState(null);
-  
+
   const {
   recentSearches,
   addSearch,
@@ -59,6 +72,11 @@ const {
     destination.trim() !== "" &&
     origin.trim().toLowerCase() ===
       destination.trim().toLowerCase();
+
+  const canSearchLiveHint = Boolean(
+    getAirportCode(selectedOriginAirport) &&
+      getAirportCode(selectedDestinationAirport)
+  );
 
   function handleTripTypeChange(event) {
     const selectedTripType = event.target.value;
@@ -156,28 +174,49 @@ const {
     setFlights([]);
     setApiError("");
 
-    try {
-      const backendAirline =
-        airline === "all"
-          ? undefined
-          : formatOption(airline);
+    const backendAirline =
+      airline === "all" ? undefined : formatOption(airline);
 
-      const response = await searchFlights({
-        origin: submittedOrigin,
-        destination: submittedDestination,
-        airline: backendAirline,
-        directOnly: directFlights,
-        maxPrice: submittedMaxPrice
-          ? Number(submittedMaxPrice)
-          : undefined,
-        sortBy: "price_asc",
-      });
+    const originCode = getAirportCode(selectedOriginAirport);
+    const destinationCode = getAirportCode(
+      selectedDestinationAirport
+    );
+    const canSearchLive = Boolean(
+      originCode && destinationCode && departure
+    );
+
+    try {
+      const response = canSearchLive
+        ? await searchLiveFlights({
+            originCode,
+            destinationCode,
+            departureDate: departure,
+            adults: Number(submittedPassengers) || 1,
+            airline: backendAirline,
+            directOnly: directFlights,
+            maxPrice: submittedMaxPrice
+              ? Number(submittedMaxPrice)
+              : undefined,
+            sortBy: "price_asc",
+          })
+        : await searchFlights({
+            origin: submittedOrigin,
+            destination: submittedDestination,
+            airline: backendAirline,
+            directOnly: directFlights,
+            maxPrice: submittedMaxPrice
+              ? Number(submittedMaxPrice)
+              : undefined,
+            sortBy: "price_asc",
+          });
 
       setFlights(response.flights);
 
       setSearchSummary({
         origin: response.origin,
         destination: response.destination,
+        originCode,
+        destinationCode,
         departure,
         returnDate: submittedReturnDate,
         passengers: submittedPassengers,
@@ -186,6 +225,7 @@ const {
         directFlights,
         maxPrice: submittedMaxPrice,
         tripType,
+        isLive: canSearchLive,
       });
 
       addSearch({
@@ -193,7 +233,6 @@ const {
         destination: response.destination,
         departure,
       });
-
 
     } catch (error) {
       console.error("Flight search failed:", error);
@@ -236,16 +275,29 @@ const {
     setApiError("");
 
     try {
-      const response = await searchFlights({
-        origin: searchSummary.origin,
-        destination: searchSummary.destination,
-        airline: backendAirline,
-        directOnly: searchSummary.directFlights,
-        maxPrice: searchSummary.maxPrice
-          ? Number(searchSummary.maxPrice)
-          : undefined,
-        sortBy: backendSortOptions[selectedSort],
-      });
+      const response = searchSummary.isLive
+        ? await searchLiveFlights({
+            originCode: searchSummary.originCode,
+            destinationCode: searchSummary.destinationCode,
+            departureDate: searchSummary.departure,
+            adults: Number(searchSummary.passengers) || 1,
+            airline: backendAirline,
+            directOnly: searchSummary.directFlights,
+            maxPrice: searchSummary.maxPrice
+              ? Number(searchSummary.maxPrice)
+              : undefined,
+            sortBy: backendSortOptions[selectedSort],
+          })
+        : await searchFlights({
+            origin: searchSummary.origin,
+            destination: searchSummary.destination,
+            airline: backendAirline,
+            directOnly: searchSummary.directFlights,
+            maxPrice: searchSummary.maxPrice
+              ? Number(searchSummary.maxPrice)
+              : undefined,
+            sortBy: backendSortOptions[selectedSort],
+          });
 
       setFlights(response.flights);
     } catch (error) {
@@ -357,8 +409,7 @@ const {
 
     const fastest = visibleFlights.reduce(
       (bestFlight, currentFlight) =>
-        currentFlight.durationMinutes <
-        bestFlight.durationMinutes
+        currentFlight.durationMinutes < bestFlight.durationMinutes
           ? currentFlight
           : bestFlight
     );
@@ -777,12 +828,25 @@ const {
               </select>
             </div>
 
-            <label className="checkbox-group">
+            <label
+              className="checkbox-group"
+              title={
+                canSearchLiveHint
+                  ? "All live results are already direct flights"
+                  : undefined
+              }
+            >
               <input
                 type="checkbox"
                 name="directFlights"
+                disabled={canSearchLiveHint}
               />
               Direct flights only
+              {canSearchLiveHint && (
+                <small style={{ marginLeft: "6px", opacity: 0.6 }}>
+                  (live results are always direct)
+                </small>
+              )}
             </label>
           </div>
 
@@ -821,8 +885,7 @@ const {
 
 {isLoading && (
 
-  
-        
+
         <section
           className="loading-card"
           aria-live="polite"
@@ -838,7 +901,7 @@ const {
         </section>
       )}
 
-      
+
 
       {apiError && !isLoading && (
         <section
@@ -861,6 +924,9 @@ const {
               <div>
                 <p className="results-eyebrow">
                   Available flights
+                  {searchSummary.isLive
+                    ? " · Live"
+                    : " · Sample data"}
                 </p>
 
                 <h2>
@@ -1001,8 +1067,14 @@ const {
                       Highest rated
                     </option>
 
-                    <option value="fewest-stops">
+                    <option
+                      value="fewest-stops"
+                      disabled={searchSummary?.isLive}
+                    >
                       Fewest stops
+                      {searchSummary?.isLive
+                        ? " (N/A for live data)"
+                        : ""}
                     </option>
                   </select>
                 </div>
@@ -1058,8 +1130,9 @@ const {
 
                         <span>
                           {flight.stops} stop
-                          {flight.stops !== 1
-                            ? "s"
+                          {flight.stops !== 1 ? "s" : ""}
+                          {flight.stops > 0 && flight.layoverAirport
+                            ? ` (${flight.layoverAirport})`
                             : ""}
                         </span>
                       </div>
@@ -1201,6 +1274,9 @@ const {
 
                           <strong>
                             {flight.stops}
+                            {flight.stops > 0 && flight.layoverAirport
+                              ? ` via ${flight.layoverAirport}`
+                              : ""}
                           </strong>
                         </div>
 
@@ -1227,19 +1303,17 @@ const {
                 </h3>
 
                 <p>
-                  Try increasing your maximum price,
-                  selecting all airlines, or turning off
-                  direct flights only.
+                  {searchSummary.isLive
+                    ? "No scheduled flights were found on this exact route. This can happen for long-haul or less common routes with no direct service, or if there's simply nothing scheduled on this date. Try a busier route (e.g. major hub-to-hub) or a nearer date."
+                    : "Try increasing your maximum price, selecting all airlines, or turning off direct flights only."}
                 </p>
               </div>
             )}
 
             <p className="results-note">
-              These results currently come from the
-              RouteWise simulated flight database.
-              Live pricing and availability would
-              require connecting an external flight
-              provider.
+              {searchSummary.isLive
+                ? "Flight schedules and airlines are live from AviationStack. Prices shown are estimated for demo purposes, since fare data requires a separate paid provider."
+                : "These results currently come from the RouteWise simulated flight database. Pick an airport suggestion from the dropdown to get live flight schedules."}
             </p>
           </section>
         )}
