@@ -143,6 +143,7 @@
     "arrivalTime": "08:15",
     "durationMinutes": 545,
     "stops": 1,
+    "layoverAirport": "Frankfurt (FRA)",
     "price": 810,
     "rating": 4.4
   },
@@ -178,6 +179,7 @@
     "arrivalTime": "20:10",
     "durationMinutes": 825,
     "stops": 1,
+    "layoverAirport": "Abu Dhabi (AUH)",
     "price": 1195,
     "rating": 4.6
   },
@@ -220,6 +222,7 @@
     "arrivalTime": "15:40",
     "durationMinutes": 1120,
     "stops": 1,
+    "layoverAirport": "Vancouver (YVR)",
     "price": 1540,
     "rating": 4.5,
     "aircraft": "Boeing 787-9",
@@ -269,6 +272,7 @@
     "arrivalTime": "10:20",
     "durationMinutes": 430,
     "stops": 1,
+    "layoverAirport": "Toronto (YYZ)",
     "price": 495,
     "rating": 4.2
   },
@@ -283,6 +287,7 @@
     "arrivalTime": "13:05",
     "durationMinutes": 455,
     "stops": 1,
+    "layoverAirport": "Toronto (YYZ)",
     "price": 535,
     "rating": 4.5
   },
@@ -297,6 +302,7 @@
     "arrivalTime": "08:25",
     "durationMinutes": 495,
     "stops": 1,
+    "layoverAirport": "Toronto (YYZ)",
     "price": 980,
     "rating": 4.5
   },
@@ -311,6 +317,7 @@
     "arrivalTime": "02:10",
     "durationMinutes": 1270,
     "stops": 2,
+    "layoverAirport": "Toronto (YYZ), Istanbul (IST)",
     "price": 1495,
     "rating": 4.4,
     "aircraft": "Mixed aircraft",
@@ -332,6 +339,7 @@
     "arrivalTime": "23:45",
     "durationMinutes": 1155,
     "stops": 2,
+    "layoverAirport": "Toronto (YYZ), Doha (DOH)",
     "price": 1420,
     "rating": 4.8
   },
@@ -360,6 +368,7 @@
     "arrivalTime": "01:35",
     "durationMinutes": 1100,
     "stops": 1,
+    "layoverAirport": "Doha (DOH)",
     "price": 1375,
     "rating": 4.8
   },
