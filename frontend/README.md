@@ -1,6 +1,6 @@
 # ✈️ RouteWise: Flight Intelligence Platform
 
-RouteWise is a full-stack flight intelligence platform that allows users to search, compare, and analyze domestic and international flight routes. It provides an intuitive interface for exploring flights, filtering results, comparing options, and saving favorite itineraries. The application uses a FastAPI backend with a simulated flight database and a React frontend.
+RouteWise is a full-stack flight intelligence platform that allows users to search, compare, and analyze domestic and international flight routes. It combines a curated simulated flight database with live flight schedule data from the AviationStack API, giving users a rich comparison experience with real-world flight data where available. The application uses a FastAPI backend and a React frontend.
 
 ## Features
 
@@ -13,6 +13,13 @@ Search flights by:
 - Return Date
 - Trip Type (One-Way / Round Trip)
 
+### Live Flight Data
+
+- Real flight schedules, airlines, and flight numbers pulled live from the AviationStack API
+- Automatically triggered when both origin and destination are selected from the airport autocomplete dropdown
+- Falls back to the simulated flight database when a route has no live coverage, when free-tier request limits are reached, or when airports are entered as free text instead of selected suggestions
+- Prices and ratings on live results are clearly labeled as estimates, since AviationStack provides schedule data rather than fare data
+
 ### Airport Autocomplete
 
 - Search by city, airport name, or IATA code
@@ -23,7 +30,7 @@ Search flights by:
 - Maximum Price
 - Preferred Airline
 - Cabin Class
-- Direct Flights Only
+- Direct Flights Only *(applies to simulated data; live results are always shown as direct, since AviationStack returns individual flight legs rather than connecting itineraries)*
 
 ### Flight Comparison
 
@@ -48,7 +55,7 @@ The application automatically highlights:
 
 - Favorite Flights
 - Recent Searches
-- Flight Details
+- Flight Details (including layover airports on multi-stop simulated flights)
 - Responsive Design
 - Search Validation
 - Friendly Error Handling
@@ -71,10 +78,13 @@ The application automatically highlights:
 - Python
 - FastAPI
 - Uvicorn
+- httpx (async HTTP client for live API requests)
+- python-dotenv (environment variable management)
 
-## Data Storage
+## Data Sources
 
-- JSON Flight Database
+- JSON simulated flight database (curated routes with full pricing, ratings, aircraft, and amenity details)
+- AviationStack API (live real-world flight schedules)
 
 ---
 
@@ -91,8 +101,16 @@ cd backend
 Install the required packages:
 
 ```bash
-pip install fastapi uvicorn
+pip install fastapi uvicorn httpx python-dotenv
 ```
+
+Create a `.env` file in the `backend` folder with your AviationStack API key:
+
+```text
+AVIATIONSTACK_API_KEY=your_api_key_here
+```
+
+A free API key can be obtained at [aviationstack.com](https://aviationstack.com).
 
 Run the backend server:
 
@@ -146,7 +164,15 @@ http://localhost:5173
 
 # Example Searches
 
-Try the following routes:
+**Live data** — select these from the autocomplete dropdown for both origin and destination to see real scheduled flights:
+
+```text
+Toronto → New York
+Toronto → Vancouver
+London → Toronto
+```
+
+**Simulated data** — routes curated in the local database with full pricing and amenity details:
 
 ```text
 Halifax → Toronto
@@ -157,10 +183,13 @@ Dubai → Lahore
 Vancouver → Tokyo
 ```
 
+Note: not every route will have live results. Uncommon or long-haul routes without direct scheduled service (e.g. Halifax → Dubai) will return no live results, since AviationStack only reports flights that actually exist.
+
 ---
 
 # Current Features
 
+- Live Flight Data (AviationStack API)
 - Airport Autocomplete
 - Flight Search
 - Flight Filtering
@@ -173,5 +202,4 @@ Vancouver → Tokyo
 - Flight Details
 - Responsive Interface
 - Backend Validation
-
----
+- Graceful Live/Simulated Data Fallback
